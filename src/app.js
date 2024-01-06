@@ -1,20 +1,27 @@
-const express = require('express');
-const expressHandlebars = require('express-handlebars');
-const session = require('express-session');
-const http = require('http');
-const socketIo = require('socket.io');
-const { connectDB, disconnectAndReconnect: _ } = require('../dao');
-const ProductManager = require('../dao/models/ProductModel');
-const CartManager = require('../dao/models/CartModel');
+import express from 'express';
+import expressHandlebars from 'express-handlebars';
+import session from 'express-session';
+import http from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { connectDB, disconnectAndReconnect as _ } from '../src/dao/index.js';
+import ProductModel from '../src/dao/models/ProductModel.js';
+import CartModel from '../src/dao/models/CartModel.js';
+import { ProductManager } from './ProductManager.js';
+import { default as productRouter } from './productRouter.js';
+
+
 
 connectDB();
 
 const app = express();
 app.engine('handlebars', expressHandlebars({
     defaultLayout: 'home',
+    layoutsDir: path.join(new URL('.', import.meta.url).pathname, 'views/layouts'),
+
 }));
 app.set('view engine', 'handlebars');
-app.set('views', 'views');
+app.set('views', 'src/views'); // Cambiado a 'src/views'
 
 app.use(session({
     secret: 'miClaveSecreta',
@@ -23,7 +30,14 @@ app.use(session({
 }));
 
 const productManager = new ProductManager();
-const cartManager = new CartManager();
+const cartManager = new CartModel();
+
+const server = http.createServer(app);
+const io = new Server(server);
+
+app.use(express.json());
+
+app.use('/products', productRouter(productManager, io)); // Agregado 'io'
 
 app.get('/', (req, res) => {
     if (req.session.user) {
@@ -56,20 +70,9 @@ app.post('/logout', (req, res) => {
     res.redirect('/');
 });
 
-app.use(express.json());
-
-const productRouter = require('./productRouter');
-app.use('/products', productRouter(productManager));
-
-const cartRouter = require('./CartRouter');
-app.use('/carts', cartRouter(cartManager));
-
 app.get('/real-time-products', (req, res) => {
-    res.render('realTimeProducts', { user: req.session.user });
+    res.render('layouts/realTimeProducts', { user: req.session.user });
 });
-
-const server = http.createServer(app);
-const io = socketIo(server);
 
 server.listen(8899, () => {
     console.log('Servidor Express corriendo en el puerto 8899');
@@ -82,3 +85,5 @@ io.on('connection', (socket) => {
         console.log('Cliente desconectado');
     });
 });
+
+export default app;

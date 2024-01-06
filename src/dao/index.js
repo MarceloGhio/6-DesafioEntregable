@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
-const CartModel = require('./models/CartModel');
-const ProductModel = require('./models/ProductModel');
+import mongoose from 'mongoose';
+import CartModel from './models/CartModel.js';
+import ProductModel from './models/ProductModel.js';
 
-const connectDB = async () => {
+export const connectDB = async () => {
     try {
         await mongoose.connect('mongodb+srv://cliente-1:<soycliente>@e-commerce.3hwzoj5.mongodb.net/?retryWrites=true&w=majority');
         console.log('Conectado a MongoDB');
@@ -12,10 +12,10 @@ const connectDB = async () => {
     }
 };
 
-const disconnectAndReconnect = () => {
+export const disconnectAndReconnect = () => {
     mongoose.disconnect(() => {
         connectDB();
     });
 };
 
-module.exports = { connectDB, CartModel, ProductModel, disconnectAndReconnect };
+export { CartModel, ProductModel };

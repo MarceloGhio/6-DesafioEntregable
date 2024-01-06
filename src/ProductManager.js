@@ -1,5 +1,6 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
+if (!mongoose.models.Product) {
 const productSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
@@ -11,9 +12,9 @@ const productSchema = new mongoose.Schema({
   status: { type: Boolean, default: true },
 });
 
-const Product = mongoose.model("Product", productSchema);
-
-class ProductManager {
+mongoose.model("Product", productSchema);
+}
+export class ProductManager {
   constructor() {
     // No se inicializan los productos aquí
   }
@@ -142,4 +143,4 @@ class ProductManager {
   }
 }
 
-module.exports = ProductManager;
+export default ProductManager;

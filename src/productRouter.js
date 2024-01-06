@@ -1,10 +1,11 @@
 // Importar los modelos de MongoDB
-const ProductModel = require('../dao/models/ProductModel');
-const CartModel = require('../dao/models/CartModel');
-const express = require('express');
+import ProductModel from './dao/models/ProductModel.js';
+import CartModel from './dao/models/CartModel.js';
+import express from 'express';
 const productRouter = express.Router();
+import path from 'path';
 
-module.exports = (productManager, io) => {
+export default (productManager, io) => {
     // Endpoint para obtener todos los productos
     productRouter.get('/', async (req, res) => {
         const { limit = 10, page = 1, sort, query } = req.query;
@@ -36,63 +37,85 @@ module.exports = (productManager, io) => {
         }
     });
 
-        // Endpoint para obtener un producto por su ID
-        productRouter.get('/:pid', async (req, res) => {
-            const productId = parseInt(req.params.pid);
-            try {
-                const product = await productManager.getProductById(productId);
-                res.json(product);
-            } catch (error) {
-                res.status(404).json({ error: error.message });
-            }
-        });
+    productRouter.post('/login', (req, res) => {
+        const { email, password } = req.body;
     
-        // Endpoint para agregar un nuevo producto
-        productRouter.post('/', async (req, res) => {
-            try {
-                const newProduct = req.body;
-                productManager.addProduct(newProduct);
+        if (email === 'adminCoder@coder.com' && password === 'adminCod3r123') {
+            req.session.user = {
+                email: 'adminCoder@coder.com',
+                role: 'admin',
+            };
+        } else {
+            req.session.user = {
+                email,
+                role: 'usuario',
+            };
+        }
     
-                // Envía la lista actualizada de productos a través de WebSocket
-                io.emit('productsUpdated', await productManager.getProducts());
+        res.redirect('/products'); // Redirige a la vista de productos
+    });
     
-                res.status(201).json(newProduct);
-            } catch (error) {
-                res.status(400).json({ error: error.message });
-            }
-        });
+    productRouter.get('/products', (req, res) => {
+        // Renderiza la vista de productos con el mensaje de bienvenida
+        res.render('layouts/products', { user: req.session.user, message: 'Bienvenido!' });
+    });
+
+    // Endpoint para obtener un producto por su ID
+    productRouter.get('/:pid', async (req, res) => {
+        const productId = parseInt(req.params.pid);
+        try {
+            const product = await productManager.getProductById(productId);
+            res.json(product);
+        } catch (error) {
+            res.status(404).json({ error: error.message });
+        }
+    });
     
-        // Endpoint para actualizar un producto por su ID
-        productRouter.put('/:pid', async (req, res) => {
-            const productId = parseInt(req.params.pid);
-            try {
-                const updatedProduct = req.body;
-                productManager.updateProduct(productId, updatedProduct);
+    // Endpoint para agregar un nuevo producto
+    productRouter.post('/', async (req, res) => {
+        try {
+            const newProduct = req.body;
+            productManager.addProduct(newProduct);
     
-                // Envía la lista actualizada de productos a través de WebSocket
-                io.emit('productsUpdated', await productManager.getProducts());
+            // Envía la lista actualizada de productos a través de WebSocket
+            io.emit('productsUpdated', await productManager.getProducts());
     
-                res.json(updatedProduct);
-            } catch (error) {
-                res.status(404).json({ error: error.message });
-            }
-        });
+            res.status(201).json(newProduct);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    });
     
-        // Endpoint para eliminar un producto por su ID
-        productRouter.delete('/:pid', async (req, res) => {
-            const productId = parseInt(req.params.pid);
-            try {
-                productManager.deleteProduct(productId);
+    // Endpoint para actualizar un producto por su ID
+    productRouter.put('/:pid', async (req, res) => {
+        const productId = parseInt(req.params.pid);
+        try {
+            const updatedProduct = req.body;
+            productManager.updateProduct(productId, updatedProduct);
     
-                // Envía la lista actualizada de productos a través de WebSocket
-                io.emit('productsUpdated', await productManager.getProducts());
+            // Envía la lista actualizada de productos a través de WebSocket
+            io.emit('productsUpdated', await productManager.getProducts());
     
-                res.status(204).end();
-            } catch (error) {
-                res.status(404).json({ error: error.message });
-            }
-        });
+            res.json(updatedProduct);
+        } catch (error) {
+            res.status(404).json({ error: error.message });
+        }
+    });
     
-        return productRouter;
-    };
+    // Endpoint para eliminar un producto por su ID
+    productRouter.delete('/:pid', async (req, res) => {
+        const productId = parseInt(req.params.pid);
+        try {
+            productManager.deleteProduct(productId);
     
+            // Envía la lista actualizada de productos a través de WebSocket
+            io.emit('productsUpdated', await productManager.getProducts());
+    
+            res.status(204).end();
+        } catch (error) {
+            res.status(404).json({ error: error.message });
+        }
+    });
+    
+    return productRouter;
+};
