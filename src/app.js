@@ -15,13 +15,16 @@ import { default as productRouter } from './productRouter.js';
 connectDB();
 
 const app = express();
+const __dirname = path.resolve();
+const viewsDir = path.join(__dirname, 'src', 'views');
+const layoutsDir = path.join(viewsDir, 'layouts');
+
 app.engine('handlebars', expressHandlebars({
     defaultLayout: 'home',
-    layoutsDir: path.join(new URL('.', import.meta.url).pathname, 'views/layouts'),
-
+    layoutsDir: layoutsDir,
 }));
 app.set('view engine', 'handlebars');
-app.set('views', 'src/views'); // Cambiado a 'src/views'
+app.set('views', viewsDir);
 
 app.use(session({
     secret: 'miClaveSecreta',
