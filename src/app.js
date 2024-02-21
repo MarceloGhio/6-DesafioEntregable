@@ -26,6 +26,8 @@ app.engine('handlebars', expressHandlebars({
 app.set('view engine', 'handlebars');
 app.set('views', viewsDir);
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(session({
     secret: 'miClaveSecreta',
     resave: false,
@@ -53,19 +55,51 @@ app.get('/', (req, res) => {
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
+    // Simula la lógica de autenticación
     if (email === 'adminCoder@coder.com' && password === 'adminCod3r123') {
-        req.session.user = {
-            email: 'adminCoder@coder.com',
-            role: 'admin',
-        };
+        // Verifica si el usuario ya está autenticado
+        if (req.session.user) {
+            console.log('El usuario ya está autenticado.');
+        } else {
+            // Guarda la información del usuario en la sesión
+            req.session.user = {
+                email: 'adminCoder@coder.com',
+                role: 'admin',
+            };
+            console.log('Usuario autenticado como administrador.');
+        }
     } else {
-        req.session.user = {
-            email,
-            role: 'usuario',
-        };
+        if (req.session.user) {
+            console.log('El usuario ya está autenticado.');
+        } else {
+            req.session.user = {
+                email,
+                role: 'usuario',
+            };
+            console.log('Usuario autenticado como usuario normal.');
+        }
     }
 
-    res.redirect('/products');
+    res.redirect('/products'); // Redirecciona a la vista de productos
+});
+
+// Verificación de roles en las rutas
+app.get('/admin', (req, res) => {
+    // Verifica si el usuario tiene rol de administrador
+    if (req.session.user && req.session.user.role === 'admin') {
+        res.send('Página de administrador');
+    } else {
+        res.status(403).send('Acceso denegado');
+    }
+});
+
+app.get('/user', (req, res) => {
+    // Verifica si el usuario tiene rol de usuario normal
+    if (req.session.user && req.session.user.role === 'usuario') {
+        res.send('Página de usuario normal');
+    } else {
+        res.status(403).send('Acceso denegado');
+    }
 });
 
 app.post('/logout', (req, res) => {
