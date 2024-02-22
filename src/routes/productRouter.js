@@ -1,6 +1,6 @@
 // Importar los modelos de MongoDB
-import ProductModel from './dao/models/ProductModel.js';
-import CartModel from './dao/models/CartModel.js';
+import ProductModel from '../dao/models/ProductModel.js';
+import CartModel from '../dao/models/CartModel.js';
 import express from 'express';
 const productRouter = express.Router();
 import path from 'path';

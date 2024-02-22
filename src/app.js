@@ -9,7 +9,7 @@ import { connectDB, disconnectAndReconnect as _ } from '../src/dao/index.js';
 import ProductModel from '../src/dao/models/ProductModel.js';
 import CartModel from '../src/dao/models/CartModel.js';
 import { ProductManager } from './ProductManager.js';
-import { default as productRouter } from './productRouter.js';
+import { default as productRouter } from './routes/productRouter.js';
 
 // Conecta a la base de datos
 connectDB();
