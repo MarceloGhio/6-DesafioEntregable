@@ -55,10 +55,15 @@ export default (productManager, io) => {
         res.redirect('/products'); // Redirige a la vista de productos
     });
     
-    productRouter.get('/products', (req, res) => {
-        // Renderiza la vista de productos con el mensaje de bienvenida
-        res.render('layouts/products', { user: req.session.user, message: 'Bienvenido!' });
-    });
+    // Endpoint para mostrar la vista de productos
+productRouter.get('/', async (req, res) => {
+    try {
+        const products = await productManager.getProducts(); // Obtén los productos de alguna manera
+        res.render('products', { products, user: req.session.user, message: 'Bienvenido!' });
+    } catch (error) {
+        res.status(404).json({ status: 'error', error: error.message });
+    }
+});
 
     // Endpoint para obtener un producto por su ID
     productRouter.get('/:pid', async (req, res) => {

@@ -4,15 +4,25 @@ import session from 'express-session';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
+import mongoose from 'mongoose'; // Importa Mongoose
 import { connectDB, disconnectAndReconnect as _ } from '../src/dao/index.js';
 import ProductModel from '../src/dao/models/ProductModel.js';
 import CartModel from '../src/dao/models/CartModel.js';
 import { ProductManager } from './ProductManager.js';
 import { default as productRouter } from './productRouter.js';
 
-
-
+// Conecta a la base de datos
 connectDB();
+
+// Define el esquema del usuario utilizando Mongoose
+const UserSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String
+});
+
+// Define el modelo de usuario
+const UserModel = mongoose.model('User', UserSchema);
 
 const app = express();
 const __dirname = path.resolve();
@@ -44,6 +54,35 @@ app.use(express.json());
 
 app.use('/products', productRouter(productManager, io)); // Agregado 'io'
 
+// Ruta para mostrar el formulario de registro
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+// Ruta para procesar el formulario de registro
+app.post('/register', async (req, res) => {
+    // Recupera los datos del formulario de registro
+    const { username, email, password } = req.body;
+
+    try {
+        // Crea un nuevo usuario con los datos del formulario
+        const newUser = new UserModel({
+            username,
+            email,
+            password
+        });
+
+        // Guarda el nuevo usuario en la base de datos
+        await newUser.save();
+
+        // Redirecciona al usuario al login luego del registro
+        res.redirect('/login');
+    } catch (error) {
+        console.error('Error al registrar al usuario:', error);
+        res.status(500).send('Error al registrar al usuario');
+    }
+});
+
 app.get('/', (req, res) => {
     if (req.session.user) {
         res.redirect('/products');
@@ -54,14 +93,11 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-
-    // Simula la lógica de autenticación
+//Todos los usuarios que no sean admin deberán contar con un rol _"usuario"_
     if (email === 'adminCoder@coder.com' && password === 'adminCod3r123') {
-        // Verifica si el usuario ya está autenticado
         if (req.session.user) {
             console.log('El usuario ya está autenticado.');
         } else {
-            // Guarda la información del usuario en la sesión
             req.session.user = {
                 email: 'adminCoder@coder.com',
                 role: 'admin',
@@ -80,12 +116,10 @@ app.post('/login', (req, res) => {
         }
     }
 
-    res.redirect('/products'); // Redirecciona a la vista de productos
+    res.redirect('/products');
 });
 
-// Verificación de roles en las rutas
 app.get('/admin', (req, res) => {
-    // Verifica si el usuario tiene rol de administrador
     if (req.session.user && req.session.user.role === 'admin') {
         res.send('Página de administrador');
     } else {
@@ -94,7 +128,6 @@ app.get('/admin', (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-    // Verifica si el usuario tiene rol de usuario normal
     if (req.session.user && req.session.user.role === 'usuario') {
         res.send('Página de usuario normal');
     } else {
